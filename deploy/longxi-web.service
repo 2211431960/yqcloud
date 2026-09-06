@@ -1,0 +1,21 @@
+# 云监控平台 · systemd 服务（免 Docker 部署时使用）
+# 安装：sudo cp deploy/longxi-web.service /etc/systemd/system/
+#       sudo systemctl daemon-reload && sudo systemctl enable --now longxi-web
+[Unit]
+Description=Longxi Yunbu Poultry Cloud Monitoring
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/longxi-yunbu
+Environment=NODE_ENV=production
+Environment=PORT=8600
+Environment=HOST=127.0.0.1
+ExecStart=/usr/bin/node backend/server.js
+Restart=always
+RestartSec=3
+# 数据目录权限：data/ 需可写（sqlite + 日志）
+
+[Install]
+WantedBy=multi-user.target

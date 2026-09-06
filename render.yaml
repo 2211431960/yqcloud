@@ -1,0 +1,21 @@
+# Render 一键部署（GitHub 仓库 → 免费 Web Service）
+# 用法：把本项目推送到 GitHub，然后在 https://render.com 用 GitHub 登录，
+# New → Web Service → Connect 该仓库，Render 会自动读取本文件完成配置并部署。
+services:
+  - type: web
+    name: yqcloud
+    runtime: node
+    plan: free
+    # 本项目零 npm 依赖（Node >= 22.5 内置 node:sqlite），无需安装步骤
+    buildCommand: echo "no npm deps"
+    startCommand: node backend/server.js
+    healthCheckPath: /api/health
+    autoDeploy: true           # 每次 push 自动部署
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: WEATHER_POLL_MIN
+        value: "10"
+      # 生产建议：关闭自助注册（改为管理员建号）
+      - key: ALLOW_REGISTER
+        value: "1"

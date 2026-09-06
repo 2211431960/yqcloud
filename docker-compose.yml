@@ -1,0 +1,19 @@
+# 生产部署：docker compose up -d --build
+services:
+  web:
+    build: .
+    container_name: yqcloud-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "8600"
+      HOST: "0.0.0.0"
+      YQ_DB: /app/data/yqcloud.db
+      # CORS_ORIGIN: https://yq.example.com   # 若前后端不同域才需要
+    ports:
+      - "127.0.0.1:8600:8600"     # 仅本机暴露，公网由 nginx 反代（见 deploy/nginx.conf.example）
+    volumes:
+      - ./data:/app/data
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }

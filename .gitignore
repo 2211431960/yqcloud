@@ -1,0 +1,14 @@
+# 忽略运行时产物与本地配置
+node_modules/
+.tmp-*
+logs/
+*.db
+*.db-wal
+*.db-shm
+.env
+npm-debug.log*
+deploy/cloudflared.exe
+
+# 保留 data 目录本身（数据库内容不入库）
+data/*
+!data/.gitkeep

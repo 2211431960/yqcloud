@@ -1,0 +1,106 @@
+  /* ---------- 实时图传 FPV 绘制（模拟机载云台俯瞰步云村散养区） ---------- */
+  const FPV_W = 640, FPV_H = 360;
+  const fh = (n) => { const x = Math.sin(n * 127.1) * 43758.5453; return x - Math.floor(x); };
+  const FP_TREES = Array.from({ length: 26 }, (_, i) => ({
+    x: fh(i * 3 + 1) * 2400, y: 60 + fh(i * 5 + 2) * 300, r: 8 + fh(i * 7 + 3) * 13, c: fh(i) > .5 ? '#52794a' : '#43683c'
+  }));
+  const FP_FIELDS = Array.from({ length: 30 }, (_, i) => ({
+    x: fh(i * 11 + 4) * 3600, y: 40 + fh(i * 13 + 5) * 320, w: 90 + fh(i * 17 + 6) * 190,
+    h: 46 + fh(i * 19 + 7) * 90, c: ['#8ba870', '#96ad7c', '#a4a979', '#b0a26e', '#9cb280'][i % 5]
+  }));
+  const FP_BLD = { x: 760, y: 128, n: 5 };
+  function drawFPV(t) {
+    const cv = Q('dr-fpv-cv');
+    if (!cv) return;
+    if (window.__fpvReal) return;   // 真实图传播放中，画布由 video 接管
+    const ctx = cv.getContext('2d');
+    const u1 = YQx.state.drones[0];
+    const flying = u1.status === '巡检中' || u1.status === '返航中';
+    const spd = flying ? Math.max(2, u1.spd) : 0;
+    const ox = (t * spd * 7) % 2400 + Math.sin(t * 0.8) * 12;   // 水平巡航偏移
+    ctx.clearRect(0, 0, FPV_W, FPV_H);
+    // 地表基调（黄土丘陵 + 绿斑）
+    const base = ctx.createLinearGradient(0, 0, 0, FPV_H);
+    base.addColorStop(0, '#b7b48e'); base.addColorStop(1, '#8f9c6d');
+    ctx.fillStyle = base; ctx.fillRect(0, 0, FPV_W, FPV_H);
+    // 田地色块（循环平铺出巡航感）
+    for (const f of FP_FIELDS) {
+      for (const k of [-1, 0, 1]) {
+        const x = f.x + k * 3600 - ox * 1.15;
+        if (x > -260 && x < FPV_W + 60) {
+          ctx.fillStyle = f.c;
+          ctx.fillRect(x, f.y, f.w, f.h);
+          if (fh(f.x) > .45) { // 垄沟线
+            ctx.strokeStyle = 'rgba(80,70,40,.28)'; ctx.lineWidth = 1;
+            for (let lx = x + 8; lx < x + f.w; lx += 9) {
+              ctx.beginPath(); ctx.moveTo(lx, f.y + 4); ctx.lineTo(lx, f.y + f.h - 3); ctx.stroke();
+            }
+          }
+        }
+      }
+    }
+    // 树丛（远景层，视差小）
+    for (const tr of FP_TREES) {
+      for (const k of [-1, 0, 1]) {
+        const x = tr.x + k * 2400 - ox * 0.55;
+        if (x > -40 && x < FPV_W + 40) {
+          ctx.fillStyle = tr.c;
+          ctx.beginPath(); ctx.arc(x, tr.y, tr.r, 0, 7); ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,.14)';
+          ctx.beginPath(); ctx.arc(x - tr.r * .3, tr.y - tr.r * .3, tr.r * .45, 0, 7); ctx.fill();
+        }
+      }
+    }
+    // 村落建筑（公路边，视差 1）
+    for (const k of [-1, 0, 1]) {
+      const bx = FP_BLD.x + k * 3600 - ox;
+      if (bx > -140 && bx < FPV_W + 40) {
+        for (let b = 0; b < FP_BLD.n; b++) {
+          const bx2 = bx + b * 34;
+          const by = FP_BLD.y + (b % 2) * 26;
+          ctx.fillStyle = '#8d8577';
+          ctx.fillRect(bx2, by, 26, 16);
+          ctx.fillStyle = b % 3 === 0 ? '#a0522d' : '#6b6f7a';
+          ctx.fillRect(bx2, by - 5, 26, 6);
+        }
+      }
+    }
+    // 土路
+    ctx.strokeStyle = 'rgba(150,130,90,.75)'; ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.moveTo(-10, 342); ctx.lineTo(220 - ox, 268); ctx.lineTo(420 - ox, 300);
+    ctx.lineTo(FPV_W + 30, 240);
+    ctx.stroke();
+    if (flying) {
+      // 鸡群目标 + AI 框
+      const tx = ((t * 26 + 60) % 480) + 60, ty = 190 + Math.sin(t * 0.5 + 1) * 55;
+      ctx.fillStyle = 'rgba(230,225,210,.8)';
+      for (let i = 0; i < 10; i++) {
+        ctx.beginPath();
+        ctx.arc(tx + Math.sin(i * 2.4) * 14, ty + Math.cos(i * 1.7) * 10, 2.6, 0, 7);
+        ctx.fill();
+      }
+      ctx.strokeStyle = 'rgba(245,245,245,.9)'; ctx.lineWidth = 1.6;
+      ctx.strokeRect(tx - 42, ty - 26, 84, 54);
+      ctx.fillStyle = 'rgba(10,20,40,.72)';
+      ctx.fillRect(tx - 42, ty - 44, 116, 17);
+      ctx.fillStyle = '#fff'; ctx.font = '11px sans-serif';
+      ctx.fillText('散养鸡群 · 93% · ' + Math.round(60 + Math.sin(t * .2) * 20) + '只', tx - 38, ty - 32);
+      // 中央瞄准 + 扫描线
+      ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(FPV_W / 2 - 12, FPV_H / 2); ctx.lineTo(FPV_W / 2 + 12, FPV_H / 2);
+      ctx.moveTo(FPV_W / 2, FPV_H / 2 - 12); ctx.lineTo(FPV_W / 2, FPV_H / 2 + 12); ctx.stroke();
+      const yy = (t * 40) % (FPV_H + 60) - 30;
+      const sg = ctx.createLinearGradient(0, yy - 20, 0, yy + 20);
+      sg.addColorStop(0, 'rgba(90,200,255,0)'); sg.addColorStop(.5, 'rgba(90,200,255,.12)'); sg.addColorStop(1, 'rgba(90,200,255,0)');
+      ctx.fillStyle = sg; ctx.fillRect(0, yy - 20, FPV_W, 40);
+    } else {
+      // 待命/充电：画面停用
+      ctx.fillStyle = 'rgba(17,24,39,.72)';
+      ctx.fillRect(0, 0, FPV_W, FPV_H);
+      ctx.fillStyle = '#e5e7eb'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('图传待命 · 无人机在机巢', FPV_W / 2, FPV_H / 2 - 6);
+      ctx.fillStyle = '#9ca3af'; ctx.font = '11px sans-serif';
+      ctx.fillText('下达起飞指令后自动开启直播', FPV_W / 2, FPV_H / 2 + 16);
+      ctx.textAlign = 'left';
+    }
+  }

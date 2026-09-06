@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>陇药步云 · 山地散养鸡云监控平台</title>
+<link rel="icon" href="assets/logo.jpg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- ======== 启动动画（Splash：全息扫描环 + 流光粒子） ======== -->
+<div id="boot-splash" role="status" aria-label="正在启动">
+  <div class="sp-flow"></div>
+  <div class="sp-grid"></div>
+  <div class="sp-orb o1"></div>
+  <div class="sp-orb o2"></div>
+  <div class="sp-orb o3"></div>
+  <i class="sp-p p1"></i><i class="sp-p p2"></i><i class="sp-p p3"></i>
+  <i class="sp-p p4"></i><i class="sp-p p5"></i><i class="sp-p p6"></i>
+  <i class="sp-p p7"></i><i class="sp-p p8"></i>
+  <div class="sp-stage">
+    <span class="sp-glow"></span>
+    <span class="sp-ring r1"></span>
+    <span class="sp-ring r2"></span>
+    <span class="sp-scan"></span>
+    <div class="sp-logo"><img src="assets/logo.jpg" alt="陇药步云"></div>
+  </div>
+  <div class="splash-name">陇药步云</div>
+  <div class="splash-sub">山地散养鸡 · <b>云监控平台</b></div>
+  <!-- 环境自检条（启动动画期间逐项检测） -->
+  <div class="sp-checks" id="sp-checks"></div>
+  <div class="splash-bar"><i></i></div>
+  <div class="splash-tip" id="splash-tip">正在环境自检…</div>
+  <!-- 自检失败错误面板 -->
+  <div class="sp-error hidden" id="sp-error">
+    <div class="spe-ico">⚠</div>
+    <b class="spe-title" id="spe-title">环境自检未通过</b>
+    <div class="spe-list" id="spe-list"></div>
+    <div class="spe-actions">
+      <button class="btn" id="spe-retry">重新自检</button>
+      <button class="btn primary hidden" id="spe-continue">忽略问题，继续进入</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== 登录 / 注册门（未登录/会话过期时锁定全部数据） ======== -->
+<div id="auth-overlay" class="hidden">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <img src="assets/logo.jpg" alt="陇药步云">
+    </div>
+    <div class="auth-title">陇药步云 · 云监控平台</div>
+    <div class="auth-sub">设备接入 · 云端指令 · 无人机/监控/补食全流程监控</div>
+    <div class="auth-tabs" role="tablist">
+      <button type="button" class="auth-tab on" id="tab-login" data-tab="login">登 录</button>
+      <button type="button" class="auth-tab" id="tab-register" data-tab="register">注册账号</button>
+    </div>
+    <!-- 登录面板 -->
+    <div class="auth-form" id="pane-login">
+      <input class="dv-in" id="lg-user" placeholder="用户名" autocomplete="username" value="admin">
+      <input class="dv-in" type="password" id="lg-pass" placeholder="密码" autocomplete="current-password">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#6b7280">
+        <input type="checkbox" id="lg-remember"> 30 天内免登录
+      </label>
+      <button class="btn primary auth-submit" style="width:100%;justify-content:center;padding:9px" id="lg-btn">
+        <span class="btn-txt">登 录</span><span class="btn-spin hidden"></span>
+      </button>
+      <div class="auth-err hidden" id="lg-err"></div>
+      <div class="auth-tip">新用户？点上方「注册账号」开通（默认操作员权限）。<br>管理员初始账号 <b>admin / 123456</b>，登录后请立即修改密码。</div>
+    </div>
+    <!-- 注册面板 -->
+    <div class="auth-form hidden" id="pane-register">
+      <input class="dv-in" id="rg-name" placeholder="您的称呼（可选，如 张三 / 值班员）" maxlength="20">
+      <input class="dv-in" id="rg-user" placeholder="用户名（3-20 位字母/数字/_）" autocomplete="username">
+      <input class="dv-in" type="password" id="rg-pass" placeholder="密码（至少 6 位）" autocomplete="new-password">
+      <input class="dv-in" type="password" id="rg-pass2" placeholder="确认密码" autocomplete="new-password">
+      <button class="btn primary auth-submit" style="width:100%;justify-content:center;padding:9px" id="rg-btn">
+        <span class="btn-txt">注册并登录</span><span class="btn-spin hidden"></span>
+      </button>
+      <div class="auth-err hidden" id="rg-err"></div>
+      <div class="auth-tip">注册即开通<b>操作员</b>权限：可查看全部数据与下发控制指令；设备/用户管理等管理操作仅管理员账号拥有。注册后自动登录进入平台。</div>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <!-- ======== 左侧导航（深色 · 256px） ======== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo" role="img" aria-label="陇药步云"></div>
+      <div class="brand-text">
+        <div class="brand-name">陇药步云</div>
+        <div class="brand-sub">山地散养鸡云监控</div>
+      </div>
+    </div>
+
+    <div class="nav-group-label">云端监控</div>
+    <nav id="nav">
+      <a class="nav-item active" data-page="overview" href="javascript:void(0)"><span class="ni-ico"></span>总览监控面板</a>
+      <a class="nav-item" data-page="video" href="javascript:void(0)"><span class="ni-ico"></span>视频监控</a>
+      <a class="nav-item" data-page="drone" href="javascript:void(0)"><span class="ni-ico"></span>无人机检测面板</a>
+      <a class="nav-item" data-page="feed" href="javascript:void(0)"><span class="ni-ico"></span>智能补食面板</a>
+      <a class="nav-item" data-page="weather" href="javascript:void(0)"><span class="ni-ico"></span>天气检测</a>
+    </nav>
+
+    <div class="nav-group-label">数据分析</div>
+    <nav class="nav-secondary">
+      <a class="nav-item" data-page="health" href="javascript:void(0)"><span class="ni-ico"></span>鸡群健康分析</a>
+      <a class="nav-item" data-page="trace" href="javascript:void(0)"><span class="ni-ico"></span>云端溯源中心</a>
+      <a class="nav-item" data-page="devices" href="javascript:void(0)"><span class="ni-ico"></span>设备与网关</a>
+      <a class="nav-item" data-page="alarm" href="javascript:void(0)"><span class="ni-ico"></span>报警中心<span id="nav-alarm-badge" class="badge hidden">0</span></a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="cloud-status">
+        <span class="cs-dot"></span>
+        <div>
+          <div class="cs-title">云端连接正常</div>
+          <div class="cs-sub" id="cloud-latency">延迟 24 ms</div>
+        </div>
+      </div>
+      <div class="ver">示范基地</div>
+    </div>
+  </aside>
+
+  <!-- ======== 主区域 ======== -->
+  <div class="main">
+    <div id="cloud-banner" class="hidden" role="alert">
+      <span class="cb-ico" id="cloud-banner-ico"></span>
+      <span id="cloud-banner-txt"></span>
+      <button id="cloud-banner-close" aria-label="关闭提示">✕</button>
+    </div>
+    <header class="topbar">
+      <div class="page-title-wrap">
+        <h1 id="page-title">总览监控面板</h1>
+        <span class="page-sub" id="page-sub">基地运行态势 · 数据实时同步</span>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn menu-btn" id="menu-btn" aria-label="打开导航菜单" title="菜单"></button>
+        <div class="search-box">
+          <span class="s-ico" id="s-ico"></span>
+          <input id="g-search" type="text" placeholder="搜索批次 / 告警 / 点位…" autocomplete="off" aria-label="全局搜索">
+          <span class="kbd">/</span>
+        </div>
+        <div class="chip weather-chip"><span id="weather-ico"></span><span id="weather-text">22℃ 多云</span></div>
+        <div class="chip"><span class="dot green"></span><span id="tp-dev">设备 46/50</span></div>
+        <div class="chip time-chip"><span id="clock-time">--:--:--</span></div>
+        <button class="icon-btn" id="bell-btn" aria-label="未读报警通知" title="未读报警">
+          <span class="bell" id="bell-ico"></span><span id="bell-badge" class="badge hidden">0</span>
+        </button>
+        <div class="user-wrap">
+          <div class="user-chip" id="user-chip" role="button" tabindex="0" title="账号菜单">
+            <span class="avatar" id="user-avatar">牧</span><span id="user-name">未登录</span>
+          </div>
+          <div class="user-menu hidden" id="user-menu">
+            <div class="um-head"><b id="um-title">账号</b><span class="tag sky" id="um-role">operator</span></div>
+            <div class="um-pw">
+              <input type="password" id="um-old" class="dv-in" placeholder="原密码">
+              <input type="password" id="um-new" class="dv-in" placeholder="新密码（≥6 位）">
+              <button class="btn primary" style="width:100%" id="um-submit">修改密码</button>
+            </div>
+            <button class="btn um-logout" id="um-logout">退出登录</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="page active" id="page-overview"></section>
+    <section class="page" id="page-video"></section>
+    <section class="page" id="page-drone"></section>
+    <section class="page" id="page-feed"></section>
+    <section class="page" id="page-weather"></section>
+    <section class="page" id="page-health"></section>
+    <section class="page" id="page-trace"></section>
+    <section class="page" id="page-devices"></section>
+    <section class="page" id="page-alarm"></section>
+  </div>
+</div>
+
+<div id="toast-root"></div>
+
+<!-- 本地优先加载 ECharts，失败则回退 CDN -->
+<script src="lib/echarts.min.js" onerror="window.__ECHARTS_CDN=1;document.write('<scr'+'ipt src=&quot;https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js&quot;><\/scr'+'ipt>')"></script>
+<!-- 视频流播放：HLS / HTTP-FLV -->
+<script src="lib/hls.min.js"></script>
+<script src="lib/flv.min.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/stream.js"></script>
+<script src="js/pages/overview.js"></script>
+<script src="js/pages/video.js"></script>
+<script src="js/pages/drone.js"></script>
+<script src="js/pages/feed.js"></script>
+<script src="js/pages/weather.js"></script>
+<script src="js/pages/health.js"></script>
+<script src="js/pages/trace.js"></script>
+<script src="js/pages/devices.js"></script>
+<script src="js/pages/alarm.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
